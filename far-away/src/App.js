@@ -1,17 +1,29 @@
 import { useState } from "react";
 
-const initialItems = [
-  { id: 1, description: "Passports", quantity: 2, packed: false },
-  { id: 2, description: "Socks", quantity: 12, packed: true },
-  { id: 3, description: "Charger", quantity: 12, packed: false },
-];
-
 export default function App() {
+  const [items, setItems] = useState([]);
+  function handleAdditems(item) {
+    setItems((items) => [...items, item]);
+  }
+  function handleDelete(id) {
+    setItems((items) => items.filter((item) => item.id !== id));
+  }
+  function handleCheck(id) {
+    setItems((items) =>
+      items.map((item) =>
+        item.id === id ? { ...item, packed: !item.packed } : item
+      )
+    );
+  }
   return (
     <div className="app">
       <Logo />
-      <Form />
-      <PackingList />
+      <Form onAdditems={handleAdditems} />
+      <PackingList
+        items={items}
+        onDelete={handleDelete}
+        onCheck={handleCheck}
+      />
       <Stats />
     </div>
   );
@@ -29,19 +41,24 @@ which by using it we can leave all the state in one central place (in react not 
 to implement this we need three steps
 */
 
-function Form() {
+function Form({ onAdditems }) {
   // we need a piece of state 1#
-  const [desc, setDesc] = useState("");
+  const [description, setDesc] = useState("");
   const [quantity, setQuantity] = useState(1);
+
+  // the new state depends on the current state therefore we need to pass callback
+  //we are not allowed to mutate state
+  // items should be added in packing list component
+  // so we need to lift the state up to the closest parent of the component which is the App
+
   function handleSubmit(eventBehave) {
     eventBehave.preventDefault(eventBehave);
-    if (!desc) return;
-    const newItem = { desc, quantity, packed: false, id: Date.now };
+    if (!description) return;
+    const newItem = { description, quantity, packed: false, id: Date.now };
+    console.log(newItem);
+    onAdditems(newItem);
     setDesc("");
     setQuantity(1);
-
-
-    
   }
   return (
     <form className="add-form" onSubmit={handleSubmit}>
@@ -62,7 +79,7 @@ function Form() {
       <input
         type="text"
         placeholder="Item..."
-        value={desc}
+        value={description}
         onChange={(eventBehave) => setDesc(eventBehave.target.value)}
       />
       <button>Add</button>
@@ -70,25 +87,35 @@ function Form() {
   );
 }
 
-function PackingList() {
+function PackingList({ items, onDelete, onCheck }) {
   return (
     <div className="list">
       <ul>
-        {initialItems.map((item) => (
-          <Item item={item} key={item.id} />
+        {items.map((item) => (
+          <Item
+            item={item}
+            onDelete={onDelete}
+            onCheck={onCheck}
+            key={item.id}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-function Item({ item }) {
+function Item({ item, onDelete, onCheck }) {
   return (
     <li>
+      <input
+        type="checkbox"
+        value={item.packed}
+        onChange={() => onCheck(item.id)}
+      />
       <span style={item.packed ? { textDecoration: "line-through" } : {}}>
         {item.quantity} {item.description}
       </span>
-      <button>❌</button>
+      <button onClick={() => onDelete(item.id)}>❌</button>
     </li>
   );
 }
