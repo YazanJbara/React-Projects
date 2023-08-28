@@ -2,12 +2,15 @@ import { useState } from "react";
 
 export default function App() {
   const [items, setItems] = useState([]);
+
   function handleAdditems(item) {
     setItems((items) => [...items, item]);
   }
+
   function handleDelete(id) {
     setItems((items) => items.filter((item) => item.id !== id));
   }
+
   function handleCheck(id) {
     setItems((items) =>
       items.map((item) =>
@@ -15,6 +18,7 @@ export default function App() {
       )
     );
   }
+
   return (
     <div className="app">
       <Logo />
@@ -24,7 +28,7 @@ export default function App() {
         onDelete={handleDelete}
         onCheck={handleCheck}
       />
-      <Stats />
+      <Stats items={items} />
     </div>
   );
 }
@@ -55,7 +59,6 @@ function Form({ onAdditems }) {
     eventBehave.preventDefault(eventBehave);
     if (!description) return;
     const newItem = { description, quantity, packed: false, id: Date.now };
-    console.log(newItem);
     onAdditems(newItem);
     setDesc("");
     setQuantity(1);
@@ -119,11 +122,26 @@ function Item({ item, onDelete, onCheck }) {
     </li>
   );
 }
-
-function Stats() {
+//for calculating this stats , we need derived state not separate state
+// because the number of items can be calculated from the items array itself
+function Stats({ items }) {
+  if (!items.length)
+    return (
+      <p className="stats">
+        {" "}
+        <em>Start Add Items</em>{" "}
+      </p>
+    );
+  const numItems = items.length;
+  const numPacked = items.filter((item) => item.packed).length;
+  const percentage = Math.round((numPacked / numItems) * 100);
   return (
     <footer className="stats">
-      <em>💕You Have X items on your list and you already packed X (X%)</em>
+      <em>
+        {percentage === 100
+          ? "You Got Everything to go"
+          : `💕You Have ${numItems} items on your list and you already packed $ ${numPacked}(${percentage}%)`}
+      </em>
     </footer>
   );
 }
