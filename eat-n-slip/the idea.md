@@ -1,0 +1,2 @@
+the application is basically where u can go with your friends to have lunch and then you can split the bill 
+the application consists of 3 components , the list of friends and I can add friend component , Form to input the bill 
