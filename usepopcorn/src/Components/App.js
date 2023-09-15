@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
+import { useMovies } from "../Custom Hooks/useMovies";
 
 const tempMovieData = [
   {
@@ -47,19 +48,24 @@ const tempWatchedData = [
     userRating: 9,
   },
 ];
+const KEY = "dd039fb9";
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "dd039fb9";
-
 export default function App() {
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  // const [watched, setWatched] = useState([]);
+
   const [selectedId, setSelectedId] = useState(null);
+
+  const {movies,isLoading,error} = useMovies(query , handleCloseMovie);
+  
+  // part 2 of storing data , the function inside the useState or whatever is the initial value will render at the mount stage.
+  const [watched, setWatched] = useState(function () {
+    const storedValue = localStorage.getItem("watched");
+    return JSON.parse(storedValue);
+  });
 
   /*
   useEffect(function () {
@@ -95,53 +101,17 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
-
+  /* we want to add a future that allows us to store the watched movies to local storage (save it) ,
+    this will be functioning by doing to parts ;
+    part 1 : each time the watched list state is updated we will update the local storage. (can be done inside the handle event function or in useEffect hook "useEffect is preferable to make it reusable")
+    part 2 : each time the App load (first mount) we will read the data from local storage and store it in watched state. 
+  */
+  // part 1
   useEffect(
     function () {
-      const controller = new AbortController();
-
-      async function fetchMovies() {
-        try {
-          setIsLoading(true);
-          setError("");
-
-          const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
-            { signal: controller.signal }
-          );
-
-          if (!res.ok)
-            throw new Error("Something went wrong with fetching movies");
-
-          const data = await res.json();
-          if (data.Response === "False") throw new Error("Movie not found");
-
-          setMovies(data.Search);
-          setError("");
-        } catch (err) {
-          if (err.name !== "AbortError") {
-            console.log(err.message);
-            setError(err.message);
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      }
-
-      if (query.length < 3) {
-        setMovies([]);
-        setError("");
-        return;
-      }
-
-      handleCloseMovie();
-      fetchMovies();
-
-      return function () {
-        controller.abort();
-      };
+      localStorage.setItem("watched", JSON.stringify(watched));
     },
-    [query]
+    [watched]
   );
 
   return (
@@ -213,8 +183,14 @@ function Logo() {
     </div>
   );
 }
-
+// auto focus on the search bar when we start the open the website is done by useRef to play with DOM
 function Search({ query, setQuery }) {
+  // step 1 to use a ref we create an ref
+  const inputEl = useRef(null);
+  // step 3 is to create an effect , the inputEl now is the input element from the DOM
+  useEffect(function () {
+    inputEl.current.focus();
+  }, []);
   return (
     <input
       className="search"
@@ -222,6 +198,8 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      // step 2 to create a ref is to call ref porp and give it the element
+      ref={inputEl}
     />
   );
 }
@@ -311,6 +289,16 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
   const watchedUserRating = watched.find(
     (movie) => movie.imdbID === selectedId
   )?.userRating;
+  // this ref is used to count how many the user rated the movie behind the scene
+  // using this ref will not cause any render or re-render (it happens without render)
+
+  const countRef = useRef(0);
+  useEffect(
+    function () {
+      if (userRating) countRef.current += 1;
+    },
+    [userRating]
+  );
 
   const {
     Title: title,
@@ -334,6 +322,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatched, watched }) {
       imdbRating: Number(imdbRating),
       runtime: Number(runtime.split(" ").at(0)),
       userRating,
+      countRating: countRef.current,
     };
 
     onAddWatched(newWatchedMovie);
