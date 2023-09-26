@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Product from "./Pages/Product";
 import Pricing from "./Pages/Pricing";
@@ -6,13 +7,17 @@ import Homepage from "./Pages/Homepage";
 import AppLayout from "./Pages/AppLayout";
 import PageNotFound from "./Pages/PageNotFound";
 import CityList from "./Components/CityList";
-import { useEffect, useState } from "react";
+import CountryList from "./Components/CountryList";
+import City from "./Components/City";
+import Form from './Components/Form'
 
 const BaseURL = "http://localhost:8000";
+
 function App() {
   // fetching from the fake API
   const [cities, setCities] = useState([]);
   const [isLodaing, setIsLoading] = useState(false);
+
 
   useEffect(function () {
     async function fetchCities() {
@@ -29,7 +34,7 @@ function App() {
     }
     fetchCities();
   }, []);
-
+// to use params (storing state in URL) we need 3 steps
   return (
     <BrowserRouter>
       <Routes>
@@ -47,8 +52,11 @@ function App() {
             path="cities"
             element={<CityList cities={cities} isLodaing={isLodaing} />}
           />
-          <Route path="countries" element={<p>Countries</p>} />
-          <Route path="form" element={<p>Form</p>} />
+
+          {/* create new route , the id is the param */}
+          <Route path="cities/:id"element={<City/>}/>
+          <Route path="countries" element={<CountryList cities={cities} isLodaing={isLodaing} />} />
+          <Route path="form" element={<Form/>} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
