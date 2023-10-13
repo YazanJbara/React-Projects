@@ -11,6 +11,8 @@ import {
 import { useEffect, useState } from "react";
 import { useCities } from "../Contexts/CiteiesContext";
 import { latLng, map } from "leaflet";
+import { useGeolocation } from "../Hooks/useGeoLocation";
+import Button from "./Button";
 // Programmatic navigation means to move to an URL without having to click in any click
 // we can
 
@@ -19,8 +21,22 @@ function Map() {
   const { cities } = useCities();
   const [mapPosition, setMapPosition] = useState([40, 0]);
   const [searchParams] = useSearchParams();
+
+  const {
+    isLoading: isLoadingPosition,
+    position: geoLocationPosition,
+    getPosition,
+  } = useGeolocation();
+
   const mapLat = searchParams.get("lat");
   const mapLng = searchParams.get("lng");
+
+  useEffect(
+    function () {
+     if(geoLocationPosition) setMapPosition([geoLocationPosition.lat , geoLocationPosition.lng]);
+    },
+    [geoLocationPosition]
+  );
 
   // Sync Mechanism
   useEffect(
@@ -32,6 +48,18 @@ function Map() {
 
   return (
     <div className={styles.mapContainer}>
+      
+      {!geoLocationPosition ? (
+        <Button type="position" onClick={getPosition}>
+          {isLoadingPosition ? "Loading..." : "Use your position"}
+        </Button>
+      ) : (
+        // (this is just an experiment)
+        <Button type = "position" >
+          {"This is Your Location"}
+        </Button>
+      )}
+
       <MapContainer
         center={mapPosition}
         zoom={6}
