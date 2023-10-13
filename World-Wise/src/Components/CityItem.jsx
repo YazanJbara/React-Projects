@@ -9,16 +9,31 @@ const formatDate = (date) =>
   }).format(new Date(date));
 
 function CityItem({ city }) {
-  const {currentCity} = useCities();
-  const { cityName, emoji, date , id , position } = city;
+  const { currentCity, deleteCity } = useCities();
+  const { cityName, emoji, date, id, position } = city;
+
   return (
     <li>
       {/* step 2 to use param is to link , it matches the path id (see App) */}
       {/* the position and lat is the query string  then read it see Map*/}
-      <Link className={`${styles.cityItem} ${id===currentCity.id ? styles['cityItem--active'] : ""}`} to={`${id}?lat=${position.lat } &lng=${position.lng}`}>
+      <Link
+        className={`${styles.cityItem} ${
+          id === currentCity.id ? styles["cityItem--active"] : ""
+        }`}
+        to={`${id}?lat=${position.lat} &lng=${position.lng}`}
+      >
         <span className={styles.emoji}>{emoji}</span>
         <h3 className={styles.name}>{cityName}</h3>
         <time className={styles.date}>({formatDate(date)})</time>
+        <button
+          className={styles.deleteBtn}
+          onClick={(e) => {
+            e.preventDefault();
+            deleteCity(id);
+          }}
+        >
+          &times;
+        </button>
       </Link>
     </li>
   );
